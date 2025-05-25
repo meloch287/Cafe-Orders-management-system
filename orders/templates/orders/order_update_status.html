@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Изменение статуса заказа{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="bi bi-pencil-square"></i> Изменение статуса заказа #{{ order.id }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <h5>Информация о заказе:</h5>
+          <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Номер стола
+              <span class="badge bg-primary rounded-pill">{{ order.table_number }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Общая стоимость
+              <span class="badge bg-success rounded-pill">{{ order.total_price }} ₽</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Текущий статус
+              <span class="badge 
+                {% if order.status == 'waiting' %}bg-warning
+                {% elif order.status == 'ready' %}bg-info
+                {% elif order.status == 'paid' %}bg-success
+                {% endif %} rounded-pill">
+                {{ order.get_status_display }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="status" class="form-label">Новый статус:</label>
+            <select name="status" id="status" class="form-select">
+              {% for key, value in status_choices %}
+                <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ value }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Обновить статус
+            </button>
+            <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Вернуться к списку
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Блюда в заказе -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-cup-hot"></i> Блюда в заказе</h5>
+      </div>
+      <div class="card-body">
+        {% if order.items %}
+          <ul class="list-group">
+            {% for item in order.items %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ item.name }}
+                <span class="badge bg-primary rounded-pill">{{ item.price }} ₽</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">В заказе нет блюд.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Анимация для карточек
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 * index);
+    });
+    
+    // Подсветка изменения статуса
+    const statusSelect = document.getElementById('status');
+    const originalStatus = statusSelect.value;
+    
+    statusSelect.addEventListener('change', function() {
+      if (this.value !== originalStatus) {
+        this.classList.add('border-primary');
+      } else {
+        this.classList.remove('border-primary');
+      }
+    });
+  });
+</script>
+{% endblock %}

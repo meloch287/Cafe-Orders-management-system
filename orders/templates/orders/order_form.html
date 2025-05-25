@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% block title %}Новый заказ{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0"><i class="bi bi-plus-circle"></i> Создать заказ</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" id="orderForm">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="{{ form.table_number.id_for_label }}" class="form-label">Номер стола</label>
+              {{ form.table_number.errors }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-table"></i></span>
+                <input type="number" name="{{ form.table_number.name }}" 
+                       class="form-control {% if form.table_number.errors %}is-invalid{% endif %}" 
+                       id="{{ form.table_number.id_for_label }}" 
+                       value="{{ form.table_number.value|default:'' }}" 
+                       placeholder="Укажите номер стола для заказа" required>
+              </div>
+              <div class="form-text">Укажите номер стола для заказа</div>
+            </div>
+            
+            <!-- Оригинальное поле items для совместимости с тестами -->
+            <div class="mb-3 d-none">
+              <label for="{{ form.items.id_for_label }}" class="form-label">{{ form.items.label }}</label>
+              {{ form.items.errors }}
+              {{ form.items }}
+            </div>
+            
+            <!-- Текстовый ввод блюд -->
+            <div class="mb-3">
+              <label for="{{ form.items_text.id_for_label }}" class="form-label">Блюда (простой ввод)</label>
+              {{ form.items_text.errors }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-pencil-square"></i></span>
+                <textarea name="{{ form.items_text.name }}" 
+                          class="form-control {% if form.items_text.errors %}is-invalid{% endif %}" 
+                          id="{{ form.items_text.id_for_label }}" 
+                          rows="4" 
+                          placeholder="Введите блюда в формате 'название - цена' (по одному на строку)
+Пример:
+Суп - 250
+Кофе - 150">{{ form.items_text.value|default:'' }}</textarea>
+              </div>
+              <div class="form-text">
+                Введите каждое блюдо в формате "название - цена" на отдельной строке
+              </div>
+            </div>
+            
+            <!-- Выбор шаблона заказа -->
+            <div class="mb-3">
+              <label class="form-label">Шаблон заказа</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-bookmark-star"></i></span>
+                <select id="orderTemplate" class="form-select">
+                  <option value="" selected>Выберите готовый шаблон заказа</option>
+                  {% for item in menu_items %}
+                    <option value="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">{{ item.name }} - {{ item.price }}₽</option>
+                  {% endfor %}
+                </select>
+                <button type="button" id="addTemplateBtn" class="btn btn-outline-primary">Добавить</button>
+              </div>
+              <div class="form-text">Выберите готовый шаблон заказа из списка</div>
+            </div>
+            
+            <!-- Выбор блюд из меню -->
+            <div class="mb-3">
+              <label class="form-label">Выбор из меню</label>
+              {{ form.menu_items.errors }}
+              <div class="menu-items-container p-3 border rounded">
+                {% for item in form.menu_items %}
+                <div class="form-check">
+                  {{ item }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            
+            <!-- Предпросмотр заказа -->
+            <div class="mb-3">
+              <label class="form-label">Предпросмотр заказа</label>
+              <div class="p-3 border rounded bg-light">
+                <table class="table table-sm" id="orderPreviewTable">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th class="text-end">Цена</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Здесь будут отображаться добавленные блюда -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Итого:</th>
+                      <th class="text-end" id="orderTotal">0.00₽</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Создать заказ
+              </button>
+              <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Вернуться к списку
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Помощь по заполнению формы -->
+      <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-info-circle"></i> Подсказка</h5>
+        </div>
+        <div class="card-body">
+          <p>Для добавления блюд в заказ вы можете использовать один из трех способов:</p>
+          <ol>
+            <li><strong>Ввести блюда в простом формате</strong> "название - цена" (каждое на новой строке)</li>
+            <li><strong>Выбрать шаблон заказа</strong> из выпадающего списка и нажать "Добавить"</li>
+            <li><strong>Выбрать блюда из меню</strong>, отметив нужные чекбоксы</li>
+          </ol>
+          <p>Вы можете комбинировать эти способы. Общая стоимость заказа будет рассчитана автоматически.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик добавления шаблона заказа
+    document.getElementById('addTemplateBtn').addEventListener('click', function() {
+      const templateSelect = document.getElementById('orderTemplate');
+      const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+      
+      if (templateSelect.value) {
+        const name = selectedOption.getAttribute('data-name');
+        const price = parseFloat(selectedOption.getAttribute('data-price'));
+        
+        // Добавляем в текстовое поле
+        const textArea = document.getElementById('{{ form.items_text.id_for_label }}');
+        if (textArea.value && textArea.value.trim() !== '') {
+          textArea.value += '\n';
+        }
+        textArea.value += `${name} - ${price}`;
+        
+        // Обновляем предпросмотр
+        updateOrderPreview();
+        
+        // Обновляем скрытое поле items для совместимости с тестами
+        updateItemsField();
+      }
+    });
+    
+    // Функция обновления предпросмотра заказа
+    function updateOrderPreview() {
+      const previewTable = document.getElementById('orderPreviewTable').getElementsByTagName('tbody')[0];
+      const totalElement = document.getElementById('orderTotal');
+      let items = [];
+      let total = 0;
+      
+      // Очищаем таблицу
+      previewTable.innerHTML = '';
+      
+      // Собираем данные из текстового поля
+      const textArea = document.getElementById('{{ form.items_text.id_for_label }}');
+      if (textArea.value) {
+        const lines = textArea.value.split('\n');
+        for (const line of lines) {
+          const match = line.match(/(.+?)\s*-\s*(\d+(?:\.\d+)?)/);
+          if (match) {
+            const name = match[1].trim();
+            const price = parseFloat(match[2]);
+            items.push({ name, price });
+            total += price;
+          }
+        }
+      }
+      
+      // Собираем данные из чекбоксов меню
+      const checkboxes = document.querySelectorAll('input[name="{{ form.menu_items.name }}"]');
+      for (const checkbox of checkboxes) {
+        if (checkbox.checked) {
+          const label = checkbox.parentElement.textContent.trim();
+          const match = label.match(/(.+?)\s*\((\d+(?:\.\d+)?)₽\)/);
+          if (match) {
+            const name = match[1].trim();
+            const price = parseFloat(match[2]);
+            items.push({ name, price });
+            total += price;
+          }
+        }
+      }
+      
+      // Заполняем таблицу
+      for (const item of items) {
+        const row = previewTable.insertRow();
+        const nameCell = row.insertCell(0);
+        const priceCell = row.insertCell(1);
+        
+        nameCell.textContent = item.name;
+        priceCell.textContent = `${item.price.toFixed(2)}₽`;
+        priceCell.className = 'text-end';
+      }
+      
+      // Если нет элементов, показываем сообщение
+      if (items.length === 0) {
+        const row = previewTable.insertRow();
+        const cell = row.insertCell(0);
+        cell.colSpan = 2;
+        cell.textContent = 'Нет добавленных блюд';
+        cell.className = 'text-center text-muted';
+      }
+      
+      // Обновляем итоговую сумму
+      totalElement.textContent = `${total.toFixed(2)}₽`;
+      
+      // Обновляем скрытое поле items для совместимости с тестами
+      updateItemsField();
+    }
+    
+    // Функция обновления скрытого поля items для совместимости с тестами
+    function updateItemsField() {
+      const items = [];
+      
+      // Собираем данные из текстового поля
+      const textArea = document.getElementById('{{ form.items_text.id_for_label }}');
+      if (textArea.value) {
+        const lines = textArea.value.split('\n');
+        for (const line of lines) {
+          const match = line.match(/(.+?)\s*-\s*(\d+(?:\.\d+)?)/);
+          if (match) {
+            const name = match[1].trim();
+            const price = parseFloat(match[2]);
+            items.push({ name, price });
+          }
+        }
+      }
+      
+      // Собираем данные из чекбоксов меню
+      const checkboxes = document.querySelectorAll('input[name="{{ form.menu_items.name }}"]');
+      for (const checkbox of checkboxes) {
+        if (checkbox.checked) {
+          const label = checkbox.parentElement.textContent.trim();
+          const match = label.match(/(.+?)\s*\((\d+(?:\.\d+)?)₽\)/);
+          if (match) {
+            const name = match[1].trim();
+            const price = parseFloat(match[2]);
+            items.push({ name, price });
+          }
+        }
+      }
+      
+      // Обновляем скрытое поле items
+      const itemsField = document.getElementById('id_items');
+      itemsField.value = JSON.stringify(items);
+    }
+    
+    // Обновляем предпросмотр при изменении любого поля
+    document.getElementById('{{ form.items_text.id_for_label }}').addEventListener('input', updateOrderPreview);
+    
+    const checkboxes = document.querySelectorAll('input[name="{{ form.menu_items.name }}"]');
+    for (const checkbox of checkboxes) {
+      checkbox.addEventListener('change', updateOrderPreview);
+    }
+    
+    // Инициализируем предпросмотр
+    updateOrderPreview();
+    
+    // Обработчик отправки формы
+    document.getElementById('orderForm').addEventListener('submit', function(event) {
+      const itemsField = document.getElementById('id_items');
+      try {
+        const items = JSON.parse(itemsField.value);
+        if (items.length === 0) {
+          event.preventDefault();
+          alert('Пожалуйста, добавьте хотя бы одно блюдо в заказ.');
+        }
+      } catch (e) {
+        event.preventDefault();
+        alert('Ошибка в формате данных. Пожалуйста, проверьте ввод.');
+      }
+    });
+  });
+</script>
+{% endblock %}

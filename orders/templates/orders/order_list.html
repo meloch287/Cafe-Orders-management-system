@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Список заказов{% endblock %}
+
+{% block content %}
+  <div class="row mb-4">
+    <div class="col">
+      <h2 class="mb-4"><i class="bi bi-list-check"></i> Список заказов</h2>
+      
+      {% if orders %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          {% for order in orders %}
+            <div class="col">
+              <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Заказ #{{ order.id }}</h5>
+                  <span class="badge rounded-pill 
+                    {% if order.status == 'waiting' %}bg-warning
+                    {% elif order.status == 'ready' %}bg-info
+                    {% elif order.status == 'paid' %}bg-success
+                    {% endif %}">
+                    {{ order.get_status_display }}
+                  </span>
+                </div>
+                <div class="card-body">
+                  <h6 class="card-subtitle mb-3 text-muted">Стол №{{ order.table_number }}</h6>
+                  
+                  <p class="card-text fw-bold">Блюда:</p>
+                  <ul class="order-items">
+                    {% for item in order.items %}
+                      <li>{{ item.name }} - {{ item.price }} ₽</li>
+                    {% empty %}
+                      <li>В заказе нет блюд</li>
+                    {% endfor %}
+                  </ul>
+                  
+                  <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="fw-bold">Итого:</span>
+                    <span class="fs-5 text-primary">{{ order.total_price }} ₽</span>
+                  </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                  <div class="d-flex justify-content-between">
+                    <a href="{% url 'order_update_status' order.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-pencil-square"></i> Изменить статус
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ order.id }}">
+                      <i class="bi bi-trash"></i> Удалить
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Modal for delete confirmation -->
+            <div class="modal fade" id="deleteModal{{ order.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ order.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel{{ order.id }}">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить заказ #{{ order.id }} для стола №{{ order.table_number }}?</p>
+                    <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> Это действие нельзя отменить.</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <form action="{% url 'order_delete' order.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">Удалить</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <i class="bi bi-info-circle"></i> Заказы отсутствуют.
+        </div>
+      {% endif %}
+      
+      <!-- Фильтры -->
+      <div class="card mb-4 mt-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-funnel"></i> Фильтры</h5>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-4">
+              <label for="table_number" class="form-label">Номер стола</label>
+              <input type="number" class="form-control" id="table_number" name="table_number" 
+                     value="{{ request.GET.table_number|default:'' }}">
+            </div>
+            <div class="col-md-4">
+              <label for="status" class="form-label">Статус</label>
+              <select class="form-select" id="status" name="status">
+                <option value="">Все статусы</option>
+                {% for status_value, status_name in status_choices %}
+                  <option value="{{ status_value }}" {% if request.GET.status == status_value %}selected{% endif %}>
+                    {{ status_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary me-2">
+                <i class="bi bi-search"></i> Применить
+              </button>
+              <a href="{% url 'order_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Сбросить
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+    <a href="{% url 'order_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Создать новый заказ
+    </a>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Анимация для карточек заказов
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 * index);
+    });
+  });
+</script>
+{% endblock %}

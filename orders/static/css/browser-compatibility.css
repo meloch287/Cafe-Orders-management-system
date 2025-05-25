@@ -1,0 +1,103 @@
+/* Vendor prefixes for cross-browser compatibility */
+
+/* Webkit (Safari, Chrome, newer versions of Opera, etc.) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #16a085;
+}
+
+/* Microsoft Edge specific styles */
+@supports (-ms-ime-align:auto) {
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  .btn {
+    transition: all 0.2s ease;
+  }
+}
+
+/* Yandex Browser and other Blink-based browsers */
+@supports (-webkit-appearance:none) {
+  input:focus, 
+  textarea:focus, 
+  select:focus {
+    outline: none;
+  }
+}
+
+/* Fallbacks for older browsers */
+.card {
+  border: 1px solid #ddd;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 10rem;
+}
+
+/* Fix for flexbox in older Edge versions */
+@supports (-ms-accelerator:true) {
+  .d-flex {
+    display: block;
+  }
+  .d-flex > * {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+/* Ensure animations work across browsers */
+@-webkit-keyframes fadeIn {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-20px);
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+
+/* Ensure touch events work properly on mobile */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+  
+  .btn:hover {
+    opacity: 1;
+  }
+  
+  /* Add active states for touch devices */
+  .card:active {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn:active {
+    opacity: 0.8;
+  }
+}

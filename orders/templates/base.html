@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Система управления заказами{% endblock %}</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css' %}">
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+  <!-- Browser compatibility -->
+  <link rel="stylesheet" href="{% static 'css/browser-compatibility.css' %}">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* Скрываем бургер-меню на десктопе */
+    @media (min-width: 992px) {
+      .navbar-toggler {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'order_list' %}">
+        Кафе <span>«Вкусные заказы»</span>
+      </a>
+      <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/orders/' %}active{% endif %}" href="{% url 'order_list' %}">
+              <i class="bi bi-list-check"></i> Список заказов
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/orders/create/' %}active{% endif %}" href="{% url 'order_create' %}">
+              <i class="bi bi-plus-circle"></i> Новый заказ
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container py-4">
+    <!-- Alerts -->
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <!-- Page Content -->
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-md-6 mx-auto">
+          <p>&copy; 2025 Кафе <strong>«Вкусные заказы»</strong></p>
+          <p>Все права защищены | Сделано с <i class="bi bi-heart-fill text-danger"></i> и Django</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+  
+  <!-- Custom JavaScript -->
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
