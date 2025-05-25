@@ -60,7 +60,8 @@ class OrderForm(forms.ModelForm):
         items_json = cleaned_data.get('items', '')
         menu_items = cleaned_data.get('menu_items', [])
         
-        items = []
+        # Словарь для отслеживания уникальности блюд (ключ: (название, цена))
+        unique_items = {}
         
         # Обработка текстового ввода
         if items_text:
@@ -75,7 +76,9 @@ class OrderForm(forms.ModelForm):
                     name = match.group(1).strip()
                     try:
                         price = float(match.group(2))
-                        items.append({"name": name, "price": price})
+                        item_key = (name, price)
+                        if item_key not in unique_items:
+                            unique_items[item_key] = {"name": name, "price": price}
                     except ValueError:
                         self.add_error('items_text', f'Некорректная цена в строке: "{line}"')
                 else:
@@ -91,7 +94,9 @@ class OrderForm(forms.ModelForm):
                             name = item['name']
                             try:
                                 price = float(item['price'])
-                                items.append({"name": name, "price": price})
+                                item_key = (name, price)
+                                if item_key not in unique_items:
+                                    unique_items[item_key] = {"name": name, "price": price}
                             except (ValueError, TypeError):
                                 self.add_error('items', f'Некорректная цена для блюда "{name}"')
                         else:
@@ -104,7 +109,14 @@ class OrderForm(forms.ModelForm):
         # Обработка выбранных элементов меню
         if menu_items:
             for item in menu_items:
-                items.append({"name": item.name, "price": float(item.price)})
+                name = item.name
+                price = float(item.price)
+                item_key = (name, price)
+                if item_key not in unique_items:
+                    unique_items[item_key] = {"name": name, "price": price}
+        
+        # Преобразуем словарь уникальных блюд обратно в список
+        items = list(unique_items.values())
         
         # Проверяем, что хотя бы один способ ввода был использован
         if not items:
